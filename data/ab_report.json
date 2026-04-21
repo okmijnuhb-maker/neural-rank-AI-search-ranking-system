@@ -1,0 +1,1 @@
+{"control_ctr": 0.2419, "treatment_ctr": 0.2905, "lift": "20.10%", "cohens_d": 0.1102, "effect_size": "Small", "t_test_pvalue": 0.0821, "mannwhitney_pvalue": 0.041, "significant": true, "current_power": 0.6927, "samples_for_80_power": 1294}

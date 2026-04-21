@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NeuralRank — About</title>
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+<style>
+:root{--bg:#f8fafc;--text:#0f172a;--card:#ffffff;--border:#e2e8f0;--primary:#0C447C;--accent:#1D9E75}
+[data-theme="dark"]{--bg:#0f172a;--text:#f1f5f9;--card:#1e293b;--border:#334155;--primary:#378ADD;--accent:#5DCAA5}
+*{margin:0;padding:0;box-sizing:border-box;transition:background .3s,color .3s}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',sans-serif}
+.navbar{background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+.nav-link{color:var(--text);text-decoration:none;padding:8px 16px;border-radius:8px;font-size:14px}
+.nav-link:hover{background:var(--border)}
+.nav-link.active{color:var(--primary);font-weight:600}
+.btn-primary{background:var(--primary);color:#fff;padding:12px 28px;border-radius:10px;border:none;cursor:pointer;font-size:15px;font-weight:500}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px}
+.toggle-btn{background:var(--border);border:none;border-radius:20px;padding:6px 12px;cursor:pointer;font-size:13px;color:var(--text)}
+.badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600}
+.timeline-dot{width:12px;height:12px;border-radius:50%;background:var(--primary);flex-shrink:0;margin-top:4px}
+.skill-tag{display:inline-block;padding:6px 14px;border-radius:20px;font-size:13px;background:var(--bg);border:1px solid var(--border);margin:4px}
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div style="max-width:1200px;margin:0 auto;padding:0 24px;height:64px;display:flex;align-items:center;justify-content:space-between">
+    <a href="index.html" style="font-size:20px;font-weight:700;color:var(--primary);text-decoration:none">Neural<span style="color:var(--accent)">Rank</span></a>
+    <div style="display:flex;align-items:center;gap:4px">
+      <a href="index.html" class="nav-link">Home</a>
+      <a href="search.html" class="nav-link">Search</a>
+      <a href="compare.html" class="nav-link">Compare</a>
+      <a href="explain.html" class="nav-link">Explainer</a>
+      <a href="about.html" class="nav-link active">About</a>
+      <button class="toggle-btn" onclick="toggleTheme()" id="themeBtn">Dark mode</button>
+      <div id="navAuth" style="margin-left:8px"></div>
+    </div>
+  </div>
+</nav>
+
+<!-- Hero -->
+<div style="background:linear-gradient(135deg,#0C447C,#1D9E75);padding:80px 24px;text-align:center;color:#fff">
+  <h1 style="font-size:40px;font-weight:700;margin-bottom:16px">About NeuralRank</h1>
+  <p style="font-size:18px;opacity:0.9;max-width:600px;margin:0 auto;line-height:1.7">A senior-level search ranking system built from scratch — replicating how Google, Microsoft and Amazon rank search results using machine learning.</p>
+</div>
+
+<div style="max-width:1100px;margin:0 auto;padding:60px 24px">
+
+  <!-- What is this project -->
+  <div class="card" style="margin-bottom:32px">
+    <h2 style="font-size:22px;font-weight:700;margin-bottom:16px">What is NeuralRank?</h2>
+    <p style="color:#64748b;font-size:15px;line-height:1.8;margin-bottom:16px">NeuralRank is a complete <strong style="color:var(--text)">Learning-to-Rank (LTR)</strong> system that uses machine learning to rank search results more accurately than traditional keyword search. It was built as a placement portfolio project demonstrating end-to-end data science, machine learning, and full-stack development skills.</p>
+    <p style="color:#64748b;font-size:15px;line-height:1.8">The system trains on the real <strong style="color:var(--text)">MS MARCO dataset</strong> — the same dataset used by Microsoft to improve Bing search — and achieves a <strong style="color:var(--accent)">17.5% improvement in NDCG@10</strong> over the BM25 baseline.</p>
+  </div>
+
+  <!-- Architecture -->
+  <div class="card" style="margin-bottom:32px">
+    <h2 style="font-size:22px;font-weight:700;margin-bottom:24px">System Architecture</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px">
+      <div style="text-align:center;padding:20px;background:var(--bg);border-radius:12px;border:1px solid var(--border)">
+        <div style="font-size:32px;margin-bottom:8px">📊</div>
+        <div style="font-weight:600;margin-bottom:4px;font-size:14px">Data Layer</div>
+        <div style="font-size:12px;color:#64748b">MS MARCO · 4,851 queries · 39,962 passages</div>
+      </div>
+      <div style="text-align:center;padding:20px;background:var(--bg);border-radius:12px;border:1px solid var(--border)">
+        <div style="font-size:32px;margin-bottom:8px">⚙️</div>
+        <div style="font-weight:600;margin-bottom:4px;font-size:14px">Feature Layer</div>
+        <div style="font-size:12px;color:#64748b">23 features · Lexical · Semantic · Positional</div>
+      </div>
+      <div style="text-align:center;padding:20px;background:var(--bg);border-radius:12px;border:1px solid var(--border)">
+        <div style="font-size:32px;margin-bottom:8px">🤖</div>
+        <div style="font-weight:600;margin-bottom:4px;font-size:14px">Model Layer</div>
+        <div style="font-size:12px;color:#64748b">XGBoost LambdaMART · NDCG objective · Early stopping</div>
+      </div>
+      <div style="text-align:center;padding:20px;background:var(--bg);border-radius:12px;border:1px solid var(--border)">
+        <div style="font-size:32px;margin-bottom:8px">🔍</div>
+        <div style="font-weight:600;margin-bottom:4px;font-size:14px">Explainability</div>
+        <div style="font-size:12px;color:#64748b">SHAP TreeExplainer · Global + Local explanations</div>
+      </div>
+      <div style="text-align:center;padding:20px;background:var(--bg);border-radius:12px;border:1px solid var(--border)">
+        <div style="font-size:32px;margin-bottom:8px">📈</div>
+        <div style="font-weight:600;margin-bottom:4px;font-size:14px">Evaluation</div>
+        <div style="font-size:12px;color:#64748b">A/B testing · Mann-Whitney U · Cohen's d</div>
+      </div>
+      <div style="text-align:center;padding:20px;background:var(--bg);border-radius:12px;border:1px solid var(--border)">
+        <div style="font-size:32px;margin-bottom:8px">🚀</div>
+        <div style="font-weight:600;margin-bottom:4px;font-size:14px">Deployment</div>
+        <div style="font-size:12px;color:#64748b">FastAPI · MySQL · Railway · HTML/CSS/JS</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Development Journey -->
+  <div class="card" style="margin-bottom:32px">
+    <h2 style="font-size:22px;font-weight:700;margin-bottom:24px">Development Journey</h2>
+    <div style="display:flex;flex-direction:column;gap:20px">
+      <div style="display:flex;gap:16px">
+        <div class="timeline-dot"></div>
+        <div>
+          <div style="font-weight:600;margin-bottom:4px">Notebook 1 — Data Collection</div>
+          <div style="font-size:13px;color:#64748b">Downloaded MS MARCO from Hugging Face. Cleaned 149 queries with no relevant passages. Saved 4,851 clean queries locally.</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:16px">
+        <div class="timeline-dot" style="background:var(--accent)"></div>
+        <div>
+          <div style="font-weight:600;margin-bottom:4px">Notebook 2 — BM25 Baseline</div>
+          <div style="font-size:13px;color:#64748b">Built BM25Okapi index on 39,962 passages. Computed NDCG@10=0.5069, MRR=0.3573, Precision@10=0.1406 as baseline targets to beat.</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:16px">
+        <div class="timeline-dot" style="background:#f39c12)"></div>
+        <div>
+          <div style="font-weight:600;margin-bottom:4px">Notebook 3 — Feature Engineering</div>
+          <div style="font-size:13px;color:#64748b">Engineered 23 features across 4 categories. Added LSA semantic similarity via TF-IDF + SVD pipeline. Computed feature correlation heatmap and importance analysis.</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:16px">
+        <div class="timeline-dot" style="background:#9b59b6"></div>
+        <div>
+          <div style="font-weight:600;margin-bottom:4px">Notebook 4 — LambdaMART Training</div>
+          <div style="font-size:13px;color:#64748b">Trained XGBoost with rank:ndcg objective. Hyperparameter tuning across 3 configs. Early stopping at round 16. Achieved NDCG@10=0.5956 — 17.5% improvement.</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:16px">
+        <div class="timeline-dot" style="background:#e74c3c"></div>
+        <div>
+          <div style="font-weight:600;margin-bottom:4px">Notebook 5 — SHAP Explainability</div>
+          <div style="font-size:13px;color:#64748b">Applied TreeExplainer on all 39,962 pairs. Generated beeswarm, waterfall, force, dependence and interaction plots. Saved interactive HTML report.</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:16px">
+        <div class="timeline-dot" style="background:#1abc9c"></div>
+        <div>
+          <div style="font-weight:600;margin-bottom:4px">Notebook 6 — A/B Testing</div>
+          <div style="font-size:13px;color:#64748b">Simulated 1,000 user sessions. Computed 20.1% CTR lift. Proved statistical significance with Mann-Whitney U (p=0.041) and Cohen's d effect size.</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:16px">
+        <div class="timeline-dot" style="background:#3498db"></div>
+        <div>
+          <div style="font-weight:600;margin-bottom:4px">Notebook 7 — Evaluation Dashboard</div>
+          <div style="font-size:13px;color:#64748b">Built interactive Plotly dashboard combining all metrics, charts and analysis. Exported as standalone HTML. Created final summary CSV.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tech Stack -->
+  <div class="card" style="margin-bottom:32px">
+    <h2 style="font-size:22px;font-weight:700;margin-bottom:20px">Tech Stack</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:24px">
+      <div>
+        <div style="font-size:13px;font-weight:600;color:var(--primary);margin-bottom:10px">Machine Learning</div>
+        <div>
+          <span class="skill-tag">XGBoost LambdaMART</span>
+          <span class="skill-tag">scikit-learn</span>
+          <span class="skill-tag">SHAP</span>
+          <span class="skill-tag">rank_bm25</span>
+          <span class="skill-tag">TruncatedSVD</span>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:13px;font-weight:600;color:var(--primary);margin-bottom:10px">Data & Analysis</div>
+        <div>
+          <span class="skill-tag">NumPy</span>
+          <span class="skill-tag">Pandas</span>
+          <span class="skill-tag">MS MARCO</span>
+          <span class="skill-tag">Hugging Face</span>
+          <span class="skill-tag">Matplotlib</span>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:13px;font-weight:600;color:var(--primary);margin-bottom:10px">Backend</div>
+        <div>
+          <span class="skill-tag">FastAPI</span>
+          <span class="skill-tag">SQLAlchemy</span>
+          <span class="skill-tag">MySQL</span>
+          <span class="skill-tag">Uvicorn</span>
+          <span class="skill-tag">PyMySQL</span>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:13px;font-weight:600;color:var(--primary);margin-bottom:10px">Frontend</div>
+        <div>
+          <span class="skill-tag">HTML5</span>
+          <span class="skill-tag">CSS3</span>
+          <span class="skill-tag">JavaScript</span>
+          <span class="skill-tag">Tailwind CSS</span>
+          <span class="skill-tag">Plotly.js</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Key Results -->
+  <div class="card" style="margin-bottom:32px;background:linear-gradient(135deg,#E6F1FB,#E1F5EE)">
+    <h2 style="font-size:22px;font-weight:700;margin-bottom:20px;color:#0C447C">Key Results</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px">
+      <div style="text-align:center">
+        <div style="font-size:32px;font-weight:700;color:#0C447C">17.5%</div>
+        <div style="font-size:13px;color:#334155">NDCG@10 improvement</div>
+      </div>
+      <div style="text-align:center">
+        <div style="font-size:32px;font-weight:700;color:#0C447C">31.6%</div>
+        <div style="font-size:13px;color:#334155">MRR improvement</div>
+      </div>
+      <div style="text-align:center">
+        <div style="font-size:32px;font-weight:700;color:#0C447C">20.1%</div>
+        <div style="font-size:13px;color:#334155">CTR lift in A/B test</div>
+      </div>
+      <div style="text-align:center">
+        <div style="font-size:32px;font-weight:700;color:#0C447C">0.041</div>
+        <div style="font-size:13px;color:#334155">A/B test p-value</div>
+      </div>
+      <div style="text-align:center">
+        <div style="font-size:32px;font-weight:700;color:#0C447C">23</div>
+        <div style="font-size:13px;color:#334155">Features engineered</div>
+      </div>
+      <div style="text-align:center">
+        <div style="font-size:32px;font-weight:700;color:#0C447C">4,851</div>
+        <div style="font-size:13px;color:#334155">MS MARCO queries</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div style="text-align:center;padding:40px 0">
+    <h3 style="font-size:24px;font-weight:700;margin-bottom:16px">Try it yourself</h3>
+    <p style="color:#64748b;margin-bottom:24px">See BM25 vs LambdaMART ranking side by side in real time</p>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+      <a href="search.html"><button class="btn-primary">Live search demo</button></a>
+      <a href="compare.html"><button style="background:transparent;color:var(--primary);padding:12px 28px;border-radius:10px;border:2px solid var(--primary);cursor:pointer;font-size:15px">View comparison</button></a>
+    </div>
+  </div>
+
+</div>
+
+<footer style="background:var(--card);border-top:1px solid var(--border);padding:24px;text-align:center">
+  <span style="color:#64748b;font-size:13px">2026 NeuralRank — Built for placement interviews</span>
+</footer>
+
+<script>
+function toggleTheme(){
+  const html = document.documentElement;
+  const isDark = html.getAttribute('data-theme')==='dark';
+  html.setAttribute('data-theme', isDark?'light':'dark');
+  document.getElementById('themeBtn').textContent = isDark?'Dark mode':'Light mode';
+  localStorage.setItem('theme', isDark?'light':'dark');
+}
+const saved = localStorage.getItem('theme');
+if(saved) document.documentElement.setAttribute('data-theme', saved);
+
+function updateNavAuth(){
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const authEl = document.getElementById('navAuth');
+  if(!authEl) return;
+  if(user.username){
+    authEl.innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="width:32px;height:32px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700">${user.username[0].toUpperCase()}</div>
+        <span style="font-size:13px;font-weight:500">${user.username}</span>
+        <button onclick="signOut()" style="padding:6px 14px;border-radius:8px;border:1.5px solid var(--border);background:transparent;color:var(--text);cursor:pointer;font-size:13px">Sign out</button>
+      </div>`;
+  } else {
+    authEl.innerHTML = `<a href="login.html"><button class="btn-primary" style="padding:8px 20px;font-size:14px">Login</button></a>`;
+  }
+}
+
+function signOut(){
+  localStorage.removeItem('user');
+  window.location.href = 'login.html';
+}
+
+updateNavAuth();
+</script>
+</body>
+</html>

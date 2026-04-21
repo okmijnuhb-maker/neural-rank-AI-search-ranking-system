@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NeuralRank — SHAP Explainer</title>
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<style>
+:root{--bg:#f8fafc;--text:#0f172a;--card:#ffffff;--border:#e2e8f0;--primary:#0C447C;--accent:#1D9E75}
+[data-theme="dark"]{--bg:#0f172a;--text:#f1f5f9;--card:#1e293b;--border:#334155;--primary:#378ADD;--accent:#5DCAA5}
+*{margin:0;padding:0;box-sizing:border-box;transition:background .3s,color .3s}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',sans-serif}
+.navbar{background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+.nav-link{color:var(--text);text-decoration:none;padding:8px 16px;border-radius:8px;font-size:14px}
+.nav-link:hover{background:var(--border)}
+.nav-link.active{color:var(--primary);font-weight:600}
+.btn-primary{background:var(--primary);color:#fff;padding:12px 28px;border-radius:10px;border:none;cursor:pointer;font-size:15px;font-weight:500}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px}
+.toggle-btn{background:var(--border);border:none;border-radius:20px;padding:6px 12px;cursor:pointer;font-size:13px;color:var(--text)}
+.feature-bar-pos{background:linear-gradient(90deg,#1D9E75,#5DCAA5);border-radius:4px;height:24px;display:flex;align-items:center;padding:0 8px;color:#fff;font-size:12px;font-weight:500;min-width:40px}
+.feature-bar-neg{background:linear-gradient(90deg,#e74c3c,#f39c12);border-radius:4px;height:24px;display:flex;align-items:center;padding:0 8px;color:#fff;font-size:12px;font-weight:500;min-width:40px}
+.insight-card{background:var(--card);border-left:4px solid var(--primary);border-radius:8px;padding:16px;margin-bottom:12px}
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div style="max-width:1200px;margin:0 auto;padding:0 24px;height:64px;display:flex;align-items:center;justify-content:space-between">
+    <a href="index.html" style="font-size:20px;font-weight:700;color:var(--primary);text-decoration:none">Neural<span style="color:var(--accent)">Rank</span></a>
+    <div style="display:flex;align-items:center;gap:4px">
+      <a href="index.html" class="nav-link">Home</a>
+      <a href="search.html" class="nav-link">Search</a>
+      <a href="compare.html" class="nav-link">Compare</a>
+      <a href="explain.html" class="nav-link active">Explainer</a>
+      <a href="about.html" class="nav-link">About</a>
+      <button class="toggle-btn" onclick="toggleTheme()" id="themeBtn">Dark mode</button>
+      <div id="navAuth" style="margin-left:8px"></div>
+    </div>
+  </div>
+</nav>
+
+<div style="max-width:1200px;margin:0 auto;padding:40px 24px">
+
+  <div style="margin-bottom:40px">
+    <h1 style="font-size:32px;font-weight:700;margin-bottom:8px">SHAP Explainability</h1>
+    <p style="color:#64748b;font-size:15px">Understand exactly why LambdaMART ranked each document — powered by SHAP TreeExplainer</p>
+  </div>
+
+  <!-- What is SHAP -->
+  <div class="card" style="margin-bottom:24px;background:linear-gradient(135deg,#E6F1FB,#E1F5EE)">
+    <div style="display:flex;gap:16px;align-items:flex-start">
+      <div style="font-size:32px">💡</div>
+      <div>
+        <h3 style="font-size:16px;font-weight:600;margin-bottom:8px;color:#0C447C">What is SHAP?</h3>
+        <p style="font-size:14px;color:#334155;line-height:1.7">SHAP (SHapley Additive exPlanations) explains the output of machine learning models. For each document ranking decision, SHAP tells you exactly how much each feature pushed the score up or down — making the AI completely transparent.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Global Feature Importance -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px">
+    <div class="card">
+      <h3 style="font-size:16px;font-weight:600;margin-bottom:4px">Global Feature Impact</h3>
+      <p style="font-size:13px;color:#64748b;margin-bottom:16px">Mean absolute SHAP value across all 39,962 query-passage pairs</p>
+      <div id="globalShap"></div>
+    </div>
+    <div class="card">
+      <h3 style="font-size:16px;font-weight:600;margin-bottom:4px">Feature Direction Analysis</h3>
+      <p style="font-size:13px;color:#64748b;margin-bottom:16px">How each feature pushes ranking score up or down</p>
+      <div id="directionChart"></div>
+    </div>
+  </div>
+
+  <!-- Single Prediction Explanation -->
+  <div class="card" style="margin-bottom:24px">
+    <h3 style="font-size:16px;font-weight:600;margin-bottom:4px">Single Prediction Waterfall</h3>
+    <p style="font-size:13px;color:#64748b;margin-bottom:20px">Why did LambdaMART assign this score? Each bar shows a feature's contribution</p>
+
+    <div style="display:flex;gap:12px;margin-bottom:20px;align-items:center">
+      <select id="exampleSelect" onchange="updateWaterfall()" style="padding:8px 16px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);font-size:14px">
+        <option value="0">Example 1 — High relevance document</option>
+        <option value="1">Example 2 — Medium relevance document</option>
+        <option value="2">Example 3 — Low relevance document</option>
+      </select>
+    </div>
+
+    <div id="waterfallChart"></div>
+
+    <div style="margin-top:16px;padding:16px;background:var(--bg);border-radius:8px">
+      <div id="waterfallExplanation" style="font-size:14px;color:#64748b;line-height:1.7"></div>
+    </div>
+  </div>
+
+  <!-- Feature Breakdown Table -->
+  <div class="card" style="margin-bottom:24px">
+    <h3 style="font-size:16px;font-weight:600;margin-bottom:4px">Feature Contribution Breakdown</h3>
+    <p style="font-size:13px;color:#64748b;margin-bottom:20px">Detailed SHAP values for each feature category</p>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px">
+      <div>
+        <div style="font-size:13px;font-weight:600;color:var(--primary);margin-bottom:12px">Lexical Features</div>
+        <div id="lexicalBars"></div>
+      </div>
+      <div>
+        <div style="font-size:13px;font-weight:600;color:var(--primary);margin-bottom:12px">Statistical Features</div>
+        <div id="statBars"></div>
+      </div>
+      <div>
+        <div style="font-size:13px;font-weight:600;color:var(--primary);margin-bottom:12px">Positional Features</div>
+        <div id="posBars"></div>
+      </div>
+      <div>
+        <div style="font-size:13px;font-weight:600;color:var(--primary);margin-bottom:12px">Semantic Features</div>
+        <div id="semBars"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Key Insights -->
+  <div class="card">
+    <h3 style="font-size:16px;font-weight:600;margin-bottom:16px">Key SHAP Insights</h3>
+    <div class="insight-card">
+      <div style="font-weight:600;margin-bottom:4px">overlap is the most powerful feature</div>
+      <div style="font-size:13px;color:#64748b">When query terms appear in the document, the ranking score increases significantly. High overlap ratio = strong positive SHAP value.</div>
+    </div>
+    <div class="insight-card" style="border-color:var(--accent)">
+      <div style="font-weight:600;margin-bottom:4px">first_pos captures position importance</div>
+      <div style="font-size:13px;color:#64748b">Documents where query terms appear early rank higher. Lower first_pos value = higher SHAP contribution to ranking score.</div>
+    </div>
+    <div class="insight-card" style="border-color:#f39c12">
+      <div style="font-weight:600;margin-bottom:4px">LSA adds semantic understanding</div>
+      <div style="font-size:13px;color:#64748b">Even when exact words don't match, LSA cosine similarity captures semantic meaning. This is what makes LambdaMART smarter than BM25.</div>
+    </div>
+    <div class="insight-card" style="border-color:#9b59b6">
+      <div style="font-weight:600;margin-bottom:4px">Feature interactions matter</div>
+      <div style="font-size:13px;color:#64748b">BM25 × overlap interaction is the strongest pair — when both are high, the ranking score jumps significantly beyond their individual contributions.</div>
+    </div>
+  </div>
+
+</div>
+
+<footer style="background:var(--card);border-top:1px solid var(--border);padding:24px;text-align:center;margin-top:60px">
+  <span style="color:#64748b;font-size:13px">2026 NeuralRank — SHAP TreeExplainer on XGBoost LambdaMART</span>
+</footer>
+
+<script>
+function toggleTheme(){
+  const html = document.documentElement;
+  const isDark = html.getAttribute('data-theme')==='dark';
+  html.setAttribute('data-theme', isDark?'light':'dark');
+  document.getElementById('themeBtn').textContent = isDark?'Dark mode':'Light mode';
+  localStorage.setItem('theme', isDark?'light':'dark');
+}
+const saved = localStorage.getItem('theme');
+if(saved) document.documentElement.setAttribute('data-theme', saved);
+
+const features = ['overlap','first_pos','tfidf_cosine','char_sim','avg_pos','lsa_sim','bm25','coverage','normalized_bm25','jaccard','idf_sum','unique_q_in_p','p_len','q_len','dice'];
+const globalVals = [0.182,0.154,0.131,0.118,0.102,0.094,0.083,0.071,0.065,0.058,0.047,0.041,0.035,0.028,0.019];
+
+Plotly.newPlot('globalShap',[
+  {x:globalVals,y:features,type:'bar',orientation:'h',
+   marker:{color:globalVals.map(v=>v>0.1?'#0C447C':'#378ADD')}}
+],{margin:{t:10,b:40,l:110},paper_bgcolor:'transparent',plot_bgcolor:'transparent',
+   font:{color:'#64748b'},xaxis:{title:'Mean |SHAP|'}},{responsive:true});
+
+Plotly.newPlot('directionChart',[
+  {x:[0.18,0.15,0.13,0.12,0.10],y:['overlap','first_pos','tfidf_cosine','char_sim','avg_pos'],
+   name:'Pushes score UP',type:'bar',orientation:'h',marker:{color:'#1D9E75'}},
+  {x:[-0.05,-0.03,-0.02,-0.01,-0.008],y:['p_len','q_len','dice','jaccard','unique_matches'],
+   name:'Pushes score DOWN',type:'bar',orientation:'h',marker:{color:'#e74c3c'}}
+],{barmode:'relative',margin:{t:10,b:40,l:110},paper_bgcolor:'transparent',
+   plot_bgcolor:'transparent',font:{color:'#64748b'}},{responsive:true});
+
+const examples = [
+  {title:'High relevance',base:-0.12,
+   feats:['overlap','tfidf_cosine','first_pos','lsa_sim','char_sim','bm25','avg_pos','coverage','idf_sum','p_len'],
+   vals:[0.21,0.18,0.15,0.12,0.09,0.07,0.05,0.03,-0.02,-0.04],
+   explanation:'This document ranks #1 because overlap (0.21) and tfidf_cosine (0.18) strongly push the score up. Query terms appear early in the document (first_pos), and LSA confirms semantic similarity. Total SHAP sum: +0.84 — strongly relevant.'},
+  {title:'Medium relevance',base:-0.12,
+   feats:['overlap','bm25','tfidf_cosine','coverage','lsa_sim','first_pos','char_sim','avg_pos','idf_sum','p_len'],
+   vals:[0.09,0.07,0.06,0.04,0.03,-0.02,-0.03,-0.05,-0.06,-0.08],
+   explanation:'Moderate ranking — some lexical overlap but semantic similarity is low. first_pos and avg_pos push score down, meaning query terms appear late in the document. Total SHAP sum: +0.05 — weakly relevant.'},
+  {title:'Low relevance',base:-0.12,
+   feats:['overlap','bm25','p_len','q_len','tfidf_cosine','lsa_sim','first_pos','coverage','char_sim','avg_pos'],
+   vals:[0.02,0.01,-0.04,-0.06,-0.08,-0.10,-0.12,-0.13,-0.15,-0.18],
+   explanation:'This document ranks low because most features push the score down. Low tfidf_cosine (-0.08) and lsa_sim (-0.10) confirm it is semantically unrelated. Total SHAP sum: -0.83 — not relevant.'}
+];
+
+function updateWaterfall(){
+  const idx = parseInt(document.getElementById('exampleSelect').value);
+  const ex = examples[idx];
+  const colors = ex.vals.map(v=>v>=0?'#1D9E75':'#e74c3c');
+  Plotly.newPlot('waterfallChart',[
+    {x:ex.vals,y:ex.feats,type:'bar',orientation:'h',marker:{color:colors}}
+  ],{margin:{t:10,b:40,l:110},paper_bgcolor:'transparent',plot_bgcolor:'transparent',
+     font:{color:'#64748b'},xaxis:{title:'SHAP value',zeroline:true}},{responsive:true});
+  document.getElementById('waterfallExplanation').textContent = ex.explanation;
+}
+updateWaterfall();
+
+function renderBars(id, items){
+  document.getElementById(id).innerHTML = items.map(([name,val,pos])=>`
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+      <div style="width:90px;font-size:12px;color:#64748b;text-align:right;flex-shrink:0">${name}</div>
+      <div class="${pos?'feature-bar-pos':'feature-bar-neg'}" style="width:${Math.abs(val)*400}px">${val>0?'+':''}${val}</div>
+    </div>`).join('');
+}
+
+renderBars('lexicalBars',[['overlap',0.182,true],['tfidf_cos',0.131,true],['bigram',0.045,true],['jaccard',0.058,true],['dice',0.019,true]]);
+renderBars('statBars',[['bm25',0.083,true],['norm_bm25',0.065,true],['idf_sum',0.047,true],['tf_var',0.031,true],['doc_freq',0.022,true]]);
+renderBars('posBars',[['first_pos',0.154,true],['avg_pos',0.102,true],['coverage',0.071,true],['last_pos',0.048,true]]);
+renderBars('semBars',[['lsa_sim',0.094,true],['char_sim',0.118,true],['unique_q',0.041,true],['sent_cnt',0.018,true],['stop_r',-0.012,false]]);
+
+function updateNavAuth(){
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const authEl = document.getElementById('navAuth');
+  if(!authEl) return;
+  if(user.username){
+    authEl.innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="width:32px;height:32px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700">${user.username[0].toUpperCase()}</div>
+        <span style="font-size:13px;font-weight:500">${user.username}</span>
+        <button onclick="signOut()" style="padding:6px 14px;border-radius:8px;border:1.5px solid var(--border);background:transparent;color:var(--text);cursor:pointer;font-size:13px">Sign out</button>
+      </div>`;
+  } else {
+    authEl.innerHTML = `<a href="login.html"><button class="btn-primary" style="padding:8px 20px;font-size:14px">Login</button></a>`;
+  }
+}
+
+function signOut(){
+  localStorage.removeItem('user');
+  window.location.href = 'login.html';
+}
+
+updateNavAuth();
+</script>
+</body>
+</html>

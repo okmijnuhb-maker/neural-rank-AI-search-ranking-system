@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NeuralRank — Model Comparison</title>
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<style>
+:root{--bg:#f8fafc;--text:#0f172a;--card:#ffffff;--border:#e2e8f0;--primary:#0C447C;--accent:#1D9E75}
+[data-theme="dark"]{--bg:#0f172a;--text:#f1f5f9;--card:#1e293b;--border:#334155;--primary:#378ADD;--accent:#5DCAA5}
+*{margin:0;padding:0;box-sizing:border-box;transition:background .3s,color .3s}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',sans-serif}
+.navbar{background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+.nav-link{color:var(--text);text-decoration:none;padding:8px 16px;border-radius:8px;font-size:14px}
+.nav-link:hover{background:var(--border)}
+.nav-link.active{color:var(--primary);font-weight:600}
+.btn-primary{background:var(--primary);color:#fff;padding:12px 28px;border-radius:10px;border:none;cursor:pointer;font-size:15px;font-weight:500}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px}
+.toggle-btn{background:var(--border);border:none;border-radius:20px;padding:6px 12px;cursor:pointer;font-size:13px;color:var(--text)}
+.metric-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center}
+.improvement-badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;background:#E1F5EE;color:#0F6E56}
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div style="max-width:1200px;margin:0 auto;padding:0 24px;height:64px;display:flex;align-items:center;justify-content:space-between">
+    <a href="index.html" style="font-size:20px;font-weight:700;color:var(--primary);text-decoration:none">Neural<span style="color:var(--accent)">Rank</span></a>
+    <div style="display:flex;align-items:center;gap:4px">
+      <a href="index.html" class="nav-link">Home</a>
+      <a href="search.html" class="nav-link">Search</a>
+      <a href="compare.html" class="nav-link active">Compare</a>
+      <a href="explain.html" class="nav-link">Explainer</a>
+      <a href="about.html" class="nav-link">About</a>
+      <button class="toggle-btn" onclick="toggleTheme()" id="themeBtn">Dark mode</button>
+      <div id="navAuth" style="margin-left:8px"></div>
+    </div>
+  </div>
+</nav>
+
+<div style="max-width:1200px;margin:0 auto;padding:40px 24px">
+
+  <div style="margin-bottom:40px">
+    <h1 style="font-size:32px;font-weight:700;margin-bottom:8px">Model Comparison</h1>
+    <p style="color:#64748b;font-size:15px">BM25 baseline vs LambdaMART — evaluated on MS MARCO test set</p>
+  </div>
+
+  <!-- Metric Cards -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:40px">
+    <div class="metric-card">
+      <div style="font-size:13px;color:#64748b;margin-bottom:8px">NDCG@10 — BM25</div>
+      <div style="font-size:32px;font-weight:700;color:#e74c3c">0.5069</div>
+      <div style="font-size:12px;color:#64748b;margin-top:4px">Baseline</div>
+    </div>
+    <div class="metric-card">
+      <div style="font-size:13px;color:#64748b;margin-bottom:8px">NDCG@10 — LambdaMART</div>
+      <div style="font-size:32px;font-weight:700;color:var(--accent)">0.5956</div>
+      <span class="improvement-badge">+17.5%</span>
+    </div>
+    <div class="metric-card">
+      <div style="font-size:13px;color:#64748b;margin-bottom:8px">MRR — BM25</div>
+      <div style="font-size:32px;font-weight:700;color:#e74c3c">0.3573</div>
+      <div style="font-size:12px;color:#64748b;margin-top:4px">Baseline</div>
+    </div>
+    <div class="metric-card">
+      <div style="font-size:13px;color:#64748b;margin-bottom:8px">MRR — LambdaMART</div>
+      <div style="font-size:32px;font-weight:700;color:var(--accent)">0.4703</div>
+      <span class="improvement-badge">+31.6%</span>
+    </div>
+    <div class="metric-card">
+      <div style="font-size:13px;color:#64748b;margin-bottom:8px">CTR Lift (A/B Test)</div>
+      <div style="font-size:32px;font-weight:700;color:var(--primary)">20.1%</div>
+      <div style="font-size:12px;color:#64748b;margin-top:4px">p-value: 0.041</div>
+    </div>
+    <div class="metric-card">
+      <div style="font-size:13px;color:#64748b;margin-bottom:8px">Features Engineered</div>
+      <div style="font-size:32px;font-weight:700;color:var(--primary)">23</div>
+      <div style="font-size:12px;color:#64748b;margin-top:4px">Across 4 categories</div>
+    </div>
+  </div>
+
+  <!-- Charts Row 1 -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px">
+    <div class="card">
+      <h3 style="font-size:16px;font-weight:600;margin-bottom:16px">NDCG@K Curve</h3>
+      <div id="ndcgChart"></div>
+    </div>
+    <div class="card">
+      <h3 style="font-size:16px;font-weight:600;margin-bottom:16px">All Metrics Comparison</h3>
+      <div id="metricsChart"></div>
+    </div>
+  </div>
+
+  <!-- Charts Row 2 -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px">
+    <div class="card">
+      <h3 style="font-size:16px;font-weight:600;margin-bottom:16px">A/B Test CTR Results</h3>
+      <div id="abChart"></div>
+    </div>
+    <div class="card">
+      <h3 style="font-size:16px;font-weight:600;margin-bottom:16px">Feature Importance (LambdaMART)</h3>
+      <div id="featureChart"></div>
+    </div>
+  </div>
+
+  <!-- Summary Table -->
+  <div class="card">
+    <h3 style="font-size:16px;font-weight:600;margin-bottom:16px">Complete Results Summary</h3>
+    <table style="width:100%;border-collapse:collapse;font-size:14px">
+      <thead>
+        <tr style="border-bottom:2px solid var(--border)">
+          <th style="text-align:left;padding:12px;color:#64748b;font-weight:500">Metric</th>
+          <th style="text-align:center;padding:12px;color:#64748b;font-weight:500">BM25</th>
+          <th style="text-align:center;padding:12px;color:#64748b;font-weight:500">LambdaMART</th>
+          <th style="text-align:center;padding:12px;color:#64748b;font-weight:500">Improvement</th>
+        </tr>
+      </thead>
+      <tbody id="summaryTable"></tbody>
+    </table>
+  </div>
+
+</div>
+
+<footer style="background:var(--card);border-top:1px solid var(--border);padding:24px;text-align:center;margin-top:60px">
+  <span style="color:#64748b;font-size:13px">2026 NeuralRank — Powered by MS MARCO + XGBoost LambdaMART</span>
+</footer>
+
+<script>
+function toggleTheme(){
+  const html = document.documentElement;
+  const isDark = html.getAttribute('data-theme')==='dark';
+  html.setAttribute('data-theme', isDark?'light':'dark');
+  document.getElementById('themeBtn').textContent = isDark?'Dark mode':'Light mode';
+  localStorage.setItem('theme', isDark?'light':'dark');
+}
+const saved = localStorage.getItem('theme');
+if(saved) document.documentElement.setAttribute('data-theme', saved);
+
+const kValues = [1,3,5,10,15,20];
+const bm25Ndcg = [0.1396,0.2779,0.3797,0.5069,0.5069,0.5069];
+const lmNdcg   = [0.3669,0.5251,0.6039,0.6629,0.6629,0.6629];
+
+Plotly.newPlot('ndcgChart',[
+  {x:kValues,y:bm25Ndcg,name:'BM25',line:{color:'#e74c3c'},mode:'lines+markers'},
+  {x:kValues,y:lmNdcg,name:'LambdaMART',line:{color:'#1D9E75'},mode:'lines+markers'}
+],{margin:{t:10,b:40},paper_bgcolor:'transparent',plot_bgcolor:'transparent',
+   font:{color:'#64748b'},xaxis:{title:'K'},yaxis:{title:'NDCG@K'},legend:{x:0,y:1}},{responsive:true});
+
+Plotly.newPlot('metricsChart',[
+  {x:['NDCG@10','MRR','Precision@10'],y:[0.5069,0.3573,0.1406],name:'BM25',type:'bar',marker:{color:'#e74c3c'}},
+  {x:['NDCG@10','MRR','Precision@10'],y:[0.5956,0.4703,0.1394],name:'LambdaMART',type:'bar',marker:{color:'#1D9E75'}}
+],{barmode:'group',margin:{t:10,b:40},paper_bgcolor:'transparent',plot_bgcolor:'transparent',
+   font:{color:'#64748b'}},{responsive:true});
+
+Plotly.newPlot('abChart',[
+  {x:['Control (BM25)','Treatment (LambdaMART)'],y:[0.2419,0.2905],
+   type:'bar',marker:{color:['#e74c3c','#1D9E75']},
+   error_y:{type:'data',array:[0.0367,0.0408],visible:true}}
+],{margin:{t:10,b:40},paper_bgcolor:'transparent',plot_bgcolor:'transparent',
+   font:{color:'#64748b'},yaxis:{title:'Click Through Rate'}},{responsive:true});
+
+const features = ['overlap','first_pos','tfidf_cosine','char_sim','avg_pos','lsa_sim','bm25','coverage','jaccard','dice'];
+const importance = [0.18,0.15,0.13,0.12,0.10,0.09,0.08,0.07,0.05,0.03];
+Plotly.newPlot('featureChart',[
+  {x:importance,y:features,type:'bar',orientation:'h',marker:{color:'#0C447C'}}
+],{margin:{t:10,b:40,l:100},paper_bgcolor:'transparent',plot_bgcolor:'transparent',
+   font:{color:'#64748b'}},{responsive:true});
+
+const rows = [
+  ['NDCG@10','0.5069','0.5956','+17.5%','#E1F5EE','#0F6E56'],
+  ['MRR','0.3573','0.4703','+31.6%','#E1F5EE','#0F6E56'],
+  ['Precision@10','0.1406','0.1394','-0.85%','#FCEBEB','#c0392b'],
+  ['CTR Lift','-','20.10%','+20.1%','#E1F5EE','#0F6E56'],
+  ['A/B p-value','-','0.041','Significant','#E6F1FB','#0C447C'],
+  ['Best Round','-','16','Early stopping','#F5F3FF','#5B21B6'],
+];
+
+document.getElementById('summaryTable').innerHTML = rows.map(r=>`
+  <tr style="border-bottom:1px solid var(--border)">
+    <td style="padding:12px;font-weight:500">${r[0]}</td>
+    <td style="padding:12px;text-align:center;color:#64748b">${r[1]}</td>
+    <td style="padding:12px;text-align:center;font-weight:600">${r[2]}</td>
+    <td style="padding:12px;text-align:center"><span style="background:${r[4]};color:${r[5]};padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600">${r[3]}</span></td>
+  </tr>`).join('');
+
+function updateNavAuth(){
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const authEl = document.getElementById('navAuth');
+  if(!authEl) return;
+  if(user.username){
+    authEl.innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="width:32px;height:32px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700">${user.username[0].toUpperCase()}</div>
+        <span style="font-size:13px;font-weight:500">${user.username}</span>
+        <button onclick="signOut()" style="padding:6px 14px;border-radius:8px;border:1.5px solid var(--border);background:transparent;color:var(--text);cursor:pointer;font-size:13px">Sign out</button>
+      </div>`;
+  } else {
+    authEl.innerHTML = `<a href="login.html"><button class="btn-primary" style="padding:8px 20px;font-size:14px">Login</button></a>`;
+  }
+}
+
+function signOut(){
+  localStorage.removeItem('user');
+  window.location.href = 'login.html';
+}
+
+updateNavAuth();
+</script>
+</body>
+</html>

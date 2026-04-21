@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NeuralRank — AI-Powered Search Ranking</title>
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css" rel="stylesheet">
+<style>
+  :root{--bg:#f8fafc;--text:#0f172a;--card:#ffffff;--border:#e2e8f0;--primary:#0C447C;--accent:#1D9E75}
+  [data-theme="dark"]{--bg:#0f172a;--text:#f1f5f9;--card:#1e293b;--border:#334155;--primary:#378ADD;--accent:#5DCAA5}
+  *{margin:0;padding:0;box-sizing:border-box;transition:background .3s,color .3s}
+  body{background:var(--bg);color:var(--text);font-family:'Segoe UI',sans-serif}
+  .navbar{background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+  .nav-link{color:var(--text);text-decoration:none;padding:8px 16px;border-radius:8px;font-size:14px}
+  .nav-link:hover{background:var(--border)}
+  .btn-primary{background:var(--primary);color:#fff;padding:12px 28px;border-radius:10px;border:none;cursor:pointer;font-size:15px;font-weight:500}
+  .btn-primary:hover{opacity:0.9;transform:translateY(-1px)}
+  .btn-outline{background:transparent;color:var(--primary);padding:12px 28px;border-radius:10px;border:2px solid var(--primary);cursor:pointer;font-size:15px}
+  .btn-outline:hover{background:var(--primary);color:#fff}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px}
+  .hero-search{background:var(--card);border:2px solid var(--border);border-radius:50px;padding:16px 24px;display:flex;align-items:center;gap:12px;max-width:600px;margin:0 auto}
+  .hero-search input{border:none;outline:none;background:transparent;font-size:16px;color:var(--text);flex:1}
+  .stat-number{font-size:36px;font-weight:700;color:var(--primary)}
+  .feature-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:16px}
+  .toggle-btn{background:var(--border);border:none;border-radius:20px;padding:6px 12px;cursor:pointer;font-size:13px;color:var(--text)}
+  .hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:8px}
+  .hamburger span{width:24px;height:2px;background:var(--text);border-radius:2px}
+  @media(max-width:768px){.nav-links{display:none;position:absolute;top:64px;left:0;right:0;background:var(--card);padding:16px;flex-direction:column;border-bottom:1px solid var(--border)}.nav-links.open{display:flex}.hamburger{display:flex}}
+  html{scroll-behavior:smooth}
+  .animate-on-scroll{opacity:0;transform:translateY(20px);transition:opacity .6s,transform .6s}
+  .animate-on-scroll.visible{opacity:1;transform:translateY(0)}
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div style="max-width:1200px;margin:0 auto;padding:0 24px;height:64px;display:flex;align-items:center;justify-content:space-between">
+    <a href="index.html" style="font-size:20px;font-weight:700;color:var(--primary);text-decoration:none">Neural<span style="color:var(--accent)">Rank</span></a>
+    <div class="hamburger" onclick="toggleMenu()"><span></span><span></span><span></span></div>
+    <div class="nav-links" id="navLinks" style="display:flex;align-items:center;gap:4px">
+      <a href="index.html" class="nav-link">Home</a>
+      <a href="search.html" class="nav-link">Search</a>
+      <a href="compare.html" class="nav-link">Compare</a>
+      <a href="explain.html" class="nav-link">Explainer</a>
+      <a href="about.html" class="nav-link">About</a>
+      <button class="toggle-btn" onclick="toggleTheme()" style="margin-left:8px" id="themeBtn">Dark mode</button>
+      <div id="navAuth" style="margin-left:8px"></div>
+    </div>
+  </div>
+</nav>
+
+<section style="padding:80px 24px;text-align:center;max-width:800px;margin:0 auto">
+  <div class="animate__animated animate__fadeInDown">
+    <span style="background:#E6F1FB;color:#0C447C;padding:6px 16px;border-radius:20px;font-size:13px;font-weight:500">Powered by LambdaMART + XGBoost</span>
+    <h1 style="font-size:52px;font-weight:700;margin:24px 0 16px;line-height:1.2">Search smarter with <span style="color:var(--primary)">AI ranking</span></h1>
+    <p style="font-size:18px;color:#64748b;margin-bottom:40px;line-height:1.7">NeuralRank uses machine learning to rank search results 17.5% better than traditional keyword search — just like Google, built from scratch.</p>
+  </div>
+  <div class="hero-search animate__animated animate__fadeInUp">
+    <span style="font-size:20px">🔍</span>
+    <input type="text" id="heroSearch" placeholder="Try searching: what is machine learning..." onkeydown="if(event.key==='Enter')goSearch()">
+    <button class="btn-primary" onclick="goSearch()" style="padding:10px 24px;border-radius:30px">Search</button>
+  </div>
+  <div style="display:flex;gap:16px;justify-content:center;margin-top:24px;flex-wrap:wrap">
+    <a href="search.html"><button class="btn-primary">Try live demo</button></a>
+    <a href="compare.html"><button class="btn-outline">View model comparison</button></a>
+  </div>
+</section>
+
+<section style="background:var(--card);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:48px 24px">
+  <div style="max-width:900px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:32px;text-align:center">
+    <div class="animate-on-scroll">
+      <div class="stat-number" id="stat1">0</div>
+      <div style="color:#64748b;font-size:14px;margin-top:4px">MS MARCO queries trained</div>
+    </div>
+    <div class="animate-on-scroll">
+      <div class="stat-number" id="stat2">0</div>
+      <div style="color:#64748b;font-size:14px;margin-top:4px">Features engineered</div>
+    </div>
+    <div class="animate-on-scroll">
+      <div class="stat-number" id="stat3">0%</div>
+      <div style="color:#64748b;font-size:14px;margin-top:4px">NDCG improvement over BM25</div>
+    </div>
+    <div class="animate-on-scroll">
+      <div class="stat-number" id="stat4">0%</div>
+      <div style="color:#64748b;font-size:14px;margin-top:4px">CTR lift in A/B test</div>
+    </div>
+  </div>
+</section>
+
+<section style="padding:80px 24px;max-width:1100px;margin:0 auto">
+  <h2 style="font-size:36px;font-weight:700;text-align:center;margin-bottom:16px">Everything a search engine needs</h2>
+  <p style="text-align:center;color:#64748b;margin-bottom:48px;font-size:16px">Built with industry-standard techniques used at Google, Microsoft and Amazon</p>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px">
+    <div class="card animate-on-scroll">
+      <div class="feature-icon" style="background:#E6F1FB">🤖</div>
+      <h3 style="font-size:18px;font-weight:600;margin-bottom:8px">LambdaMART ranking</h3>
+      <p style="color:#64748b;font-size:14px;line-height:1.7">Trained on real MS MARCO dataset with XGBoost learning-to-rank objective. Beats BM25 baseline by 17.5% NDCG@10.</p>
+    </div>
+    <div class="card animate-on-scroll">
+      <div class="feature-icon" style="background:#E1F5EE">🔬</div>
+      <h3 style="font-size:18px;font-weight:600;margin-bottom:8px">23 engineered features</h3>
+      <p style="color:#64748b;font-size:14px;line-height:1.7">Lexical, semantic, positional and statistical features extracted from every query-document pair for maximum ranking accuracy.</p>
+    </div>
+    <div class="card animate-on-scroll">
+      <div class="feature-icon" style="background:#FAEEDA">💡</div>
+      <h3 style="font-size:18px;font-weight:600;margin-bottom:8px">SHAP explainability</h3>
+      <p style="color:#64748b;font-size:14px;line-height:1.7">Every ranking decision is explained using SHAP values. Know exactly why a document ranked first for any query.</p>
+    </div>
+    <div class="card animate-on-scroll">
+      <div class="feature-icon" style="background:#FCEBEB">📊</div>
+      <h3 style="font-size:18px;font-weight:600;margin-bottom:8px">A/B testing</h3>
+      <p style="color:#64748b;font-size:14px;line-height:1.7">Statistically proven 20% CTR lift with Mann-Whitney U test (p=0.041). Industry-standard evaluation methodology.</p>
+    </div>
+    <div class="card animate-on-scroll">
+      <div class="feature-icon" style="background:#EEEDFE">⚡</div>
+      <h3 style="font-size:18px;font-weight:600;margin-bottom:8px">Real-time API</h3>
+      <p style="color:#64748b;font-size:14px;line-height:1.7">FastAPI backend serves ranked results in milliseconds. Every query logged to MySQL for analytics and monitoring.</p>
+    </div>
+    <div class="card animate-on-scroll">
+      <div class="feature-icon" style="background:#E1F5EE">🛡️</div>
+      <h3 style="font-size:18px;font-weight:600;margin-bottom:8px">Admin dashboard</h3>
+      <p style="color:#64748b;font-size:14px;line-height:1.7">Full admin panel to monitor queries, model performance, user activity and A/B test results in real time.</p>
+    </div>
+  </div>
+</section>
+
+<section style="padding:80px 24px;text-align:center;background:var(--primary)">
+  <h2 style="font-size:36px;font-weight:700;color:#fff;margin-bottom:16px">Ready to see it in action?</h2>
+  <p style="color:#B5D4F4;font-size:16px;margin-bottom:32px">Type any query and watch BM25 vs LambdaMART rank results side by side</p>
+  <a href="search.html"><button style="background:#fff;color:var(--primary);padding:14px 36px;border-radius:10px;border:none;cursor:pointer;font-size:16px;font-weight:600">Try live search demo</button></a>
+</section>
+
+<footer style="background:var(--card);border-top:1px solid var(--border);padding:48px 24px">
+  <div style="max-width:1100px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:32px">
+    <div>
+      <div style="font-size:20px;font-weight:700;color:var(--primary);margin-bottom:12px">Neural<span style="color:var(--accent)">Rank</span></div>
+      <p style="color:#64748b;font-size:13px;line-height:1.7">AI-powered search ranking system built with LambdaMART, SHAP explainability and real MS MARCO data.</p>
+    </div>
+    <div>
+      <div style="font-weight:600;margin-bottom:12px;font-size:14px">Pages</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <a href="search.html" style="color:#64748b;font-size:13px;text-decoration:none">Search demo</a>
+        <a href="compare.html" style="color:#64748b;font-size:13px;text-decoration:none">Model comparison</a>
+        <a href="explain.html" style="color:#64748b;font-size:13px;text-decoration:none">SHAP explainer</a>
+        <a href="about.html" style="color:#64748b;font-size:13px;text-decoration:none">About</a>
+      </div>
+    </div>
+    <div>
+      <div style="font-weight:600;margin-bottom:12px;font-size:14px">Tech stack</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <span style="color:#64748b;font-size:13px">FastAPI + Python</span>
+        <span style="color:#64748b;font-size:13px">XGBoost LambdaMART</span>
+        <span style="color:#64748b;font-size:13px">MySQL + SQLAlchemy</span>
+        <span style="color:#64748b;font-size:13px">MS MARCO dataset</span>
+      </div>
+    </div>
+    <div>
+      <div style="font-weight:600;margin-bottom:12px;font-size:14px">Results</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <span style="color:#64748b;font-size:13px">NDCG@10: 0.5956</span>
+        <span style="color:#64748b;font-size:13px">MRR: 0.4703</span>
+        <span style="color:#64748b;font-size:13px">CTR lift: 20.10%</span>
+        <span style="color:#64748b;font-size:13px">p-value: 0.041</span>
+      </div>
+    </div>
+  </div>
+  <div style="max-width:1100px;margin:32px auto 0;padding-top:24px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+    <span style="color:#64748b;font-size:13px">2026 NeuralRank. Built for placement interviews.</span>
+    <span style="color:#64748b;font-size:13px">Powered by MS MARCO + XGBoost</span>
+  </div>
+</footer>
+
+<script>
+function toggleTheme(){
+  const html = document.documentElement;
+  const isDark = html.getAttribute('data-theme') === 'dark';
+  html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  document.getElementById('themeBtn').textContent = isDark ? 'Dark mode' : 'Light mode';
+  localStorage.setItem('theme', isDark ? 'light' : 'dark');
+}
+
+function toggleMenu(){
+  document.getElementById('navLinks').classList.toggle('open');
+}
+
+function goSearch(){
+  const q = document.getElementById('heroSearch').value;
+  if(q) window.location.href = `search.html?q=${encodeURIComponent(q)}`;
+}
+
+const saved = localStorage.getItem('theme');
+if(saved) document.documentElement.setAttribute('data-theme', saved);
+
+function animateCount(id, target, suffix=''){
+  let count = 0;
+  const step = Math.ceil(target/60);
+  const timer = setInterval(()=>{
+    count = Math.min(count+step, target);
+    document.getElementById(id).textContent = count + suffix;
+    if(count >= target) clearInterval(timer);
+  }, 30);
+}
+
+const observer = new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      e.target.classList.add('visible');
+    }
+  });
+}, {threshold: 0.1});
+
+document.querySelectorAll('.animate-on-scroll').forEach(el => observer.observe(el));
+
+function updateNavAuth(){
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const authEl = document.getElementById('navAuth');
+  if(!authEl) return;
+  if(user.username){
+    authEl.innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="width:32px;height:32px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700">${user.username[0].toUpperCase()}</div>
+        <span style="font-size:13px;font-weight:500">${user.username}</span>
+        <button onclick="signOut()" style="padding:6px 14px;border-radius:8px;border:1.5px solid var(--border);background:transparent;color:var(--text);cursor:pointer;font-size:13px">Sign out</button>
+      </div>`;
+  } else {
+    authEl.innerHTML = `<a href="login.html"><button class="btn-primary" style="padding:8px 20px;font-size:14px">Login</button></a>`;
+  }
+}
+
+function signOut(){
+  localStorage.removeItem('user');
+  window.location.href = 'login.html';
+}
+
+updateNavAuth();
+
+window.addEventListener('load', ()=>{
+  setTimeout(()=>{
+    animateCount('stat1', 4851, '');
+    animateCount('stat2', 23, '');
+    animateCount('stat3', 17, '%');
+    animateCount('stat4', 20, '%');
+  }, 500);
+});
+</script>
+</body>
+</html>

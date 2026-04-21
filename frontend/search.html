@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NeuralRank — Live Search</title>
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+<style>
+:root{--bg:#f8fafc;--text:#0f172a;--card:#ffffff;--border:#e2e8f0;--primary:#0C447C;--accent:#1D9E75}
+[data-theme="dark"]{--bg:#0f172a;--text:#f1f5f9;--card:#1e293b;--border:#334155;--primary:#378ADD;--accent:#5DCAA5}
+*{margin:0;padding:0;box-sizing:border-box;transition:background .3s,color .3s}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',sans-serif}
+.navbar{background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+.nav-link{color:var(--text);text-decoration:none;padding:8px 16px;border-radius:8px;font-size:14px}
+.nav-link:hover{background:var(--border)}
+.nav-link.active{color:var(--primary);font-weight:600}
+.btn-primary{background:var(--primary);color:#fff;padding:12px 28px;border-radius:10px;border:none;cursor:pointer;font-size:15px;font-weight:500}
+.search-box{background:var(--card);border:2px solid var(--border);border-radius:50px;padding:16px 24px;display:flex;align-items:center;gap:12px}
+.search-box:focus-within{border-color:var(--primary)}
+.search-box input{border:none;outline:none;background:transparent;font-size:16px;color:var(--text);flex:1}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px}
+.result-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px;cursor:pointer}
+.result-card:hover{border-color:var(--primary);transform:translateY(-1px);transition:all .2s}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500}
+.badge-blue{background:#E6F1FB;color:#0C447C}
+.badge-green{background:#E1F5EE;color:#0F6E56}
+.badge-rank{background:var(--primary);color:#fff;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0}
+.skeleton{background:var(--border);border-radius:8px;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.toggle-btn{background:var(--border);border:none;border-radius:20px;padding:6px 12px;cursor:pointer;font-size:13px;color:var(--text)}
+.tab-btn{padding:8px 20px;border:1px solid var(--border);border-radius:8px;background:transparent;color:var(--text);cursor:pointer;font-size:14px}
+.tab-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+mark{background:#FEF9C3;color:#854F0B;border-radius:3px;padding:0 2px}
+[data-theme="dark"] mark{background:#633806;color:#FAC775}
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div style="max-width:1200px;margin:0 auto;padding:0 24px;height:64px;display:flex;align-items:center;justify-content:space-between">
+    <a href="index.html" style="font-size:20px;font-weight:700;color:var(--primary);text-decoration:none">Neural<span style="color:var(--accent)">Rank</span></a>
+    <div style="display:flex;align-items:center;gap:4px">
+      <a href="index.html" class="nav-link">Home</a>
+      <a href="search.html" class="nav-link active">Search</a>
+      <a href="compare.html" class="nav-link">Compare</a>
+      <a href="explain.html" class="nav-link">Explainer</a>
+      <a href="about.html" class="nav-link">About</a>
+      <button class="toggle-btn" onclick="toggleTheme()" id="themeBtn">Dark mode</button>
+      <div id="navAuth" style="margin-left:8px"></div>
+    </div>
+  </div>
+</nav>
+
+<div style="max-width:1200px;margin:0 auto;padding:40px 24px">
+  <div style="margin-bottom:32px">
+    <h1 style="font-size:28px;font-weight:700;margin-bottom:8px">Live search demo</h1>
+    <p style="color:#64748b;font-size:15px">Compare BM25 keyword search vs LambdaMART AI ranking side by side</p>
+  </div>
+
+  <div class="search-box" style="margin-bottom:24px">
+    <span style="font-size:20px">🔍</span>
+    <input type="text" id="searchInput" placeholder="Search anything... e.g. what is deep learning" onkeydown="if(event.key==='Enter')doSearch()">
+    <div id="searchTime" style="font-size:12px;color:#64748b;white-space:nowrap"></div>
+    <button class="btn-primary" onclick="doSearch()" style="border-radius:30px;padding:10px 24px">Search</button>
+  </div>
+
+  <div style="display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap">
+    <span style="font-size:13px;color:#64748b;padding:8px 0">Try:</span>
+    <button onclick="quickSearch('what is machine learning')" style="padding:6px 14px;border:1px solid var(--border);border-radius:20px;background:transparent;color:var(--text);cursor:pointer;font-size:13px">what is machine learning</button>
+    <button onclick="quickSearch('how does python work')" style="padding:6px 14px;border:1px solid var(--border);border-radius:20px;background:transparent;color:var(--text);cursor:pointer;font-size:13px">how does python work</button>
+    <button onclick="quickSearch('what is neural network')" style="padding:6px 14px;border:1px solid var(--border);border-radius:20px;background:transparent;color:var(--text);cursor:pointer;font-size:13px">what is neural network</button>
+  </div>
+
+  <div id="results" style="display:none">
+    <div style="display:flex;gap:8px;margin-bottom:20px">
+      <button class="tab-btn active" onclick="showTab('both')" id="tab-both">Side by side</button>
+      <button class="tab-btn" onclick="showTab('lambdamart')" id="tab-lambdamart">LambdaMART only</button>
+      <button class="tab-btn" onclick="showTab('bm25')" id="tab-bm25">BM25 only</button>
+    </div>
+
+    <div id="view-both" style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+          <span style="font-size:16px;font-weight:600">BM25 results</span>
+          <span class="badge badge-blue">Baseline</span>
+        </div>
+        <div id="bm25Results"></div>
+      </div>
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+          <span style="font-size:16px;font-weight:600">LambdaMART results</span>
+          <span class="badge badge-green">AI ranked</span>
+<span style="font-size:11px;color:#64748b;margin-left:4px">SHAP weighted features</span>
+        </div>
+        <div id="lmResults"></div>
+      </div>
+    </div>
+
+    <div id="view-lambdamart" style="display:none;max-width:700px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+        <span style="font-size:16px;font-weight:600">LambdaMART results</span>
+        <span class="badge badge-green">AI ranked</span>
+      </div>
+      <div id="lmResultsSingle"></div>
+    </div>
+
+    <div id="view-bm25" style="display:none;max-width:700px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+        <span style="font-size:16px;font-weight:600">BM25 results</span>
+        <span class="badge badge-blue">Baseline</span>
+      </div>
+      <div id="bm25ResultsSingle"></div>
+    </div>
+  </div>
+
+  <div id="skeleton" style="display:none;grid-template-columns:1fr 1fr;gap:24px">
+    <div>
+      <div class="skeleton" style="height:20px;width:120px;margin-bottom:16px"></div>
+      <div class="skeleton" style="height:80px;margin-bottom:12px;border-radius:12px"></div>
+      <div class="skeleton" style="height:80px;margin-bottom:12px;border-radius:12px"></div>
+      <div class="skeleton" style="height:80px;margin-bottom:12px;border-radius:12px"></div>
+    </div>
+    <div>
+      <div class="skeleton" style="height:20px;width:140px;margin-bottom:16px"></div>
+      <div class="skeleton" style="height:80px;margin-bottom:12px;border-radius:12px"></div>
+      <div class="skeleton" style="height:80px;margin-bottom:12px;border-radius:12px"></div>
+      <div class="skeleton" style="height:80px;margin-bottom:12px;border-radius:12px"></div>
+    </div>
+  </div>
+
+  <div id="emptyState" style="text-align:center;padding:80px 0;display:block">
+    <div style="font-size:48px;margin-bottom:16px">🔍</div>
+    <h3 style="font-size:20px;font-weight:600;margin-bottom:8px">Enter a query to search</h3>
+    <p style="color:#64748b">Try searching for anything — machine learning, python, cloud computing</p>
+  </div>
+</div>
+
+<script>
+const API = 'http://127.0.0.1:8000';
+
+function toggleTheme(){
+  const html = document.documentElement;
+  const isDark = html.getAttribute('data-theme')==='dark';
+  html.setAttribute('data-theme', isDark?'light':'dark');
+  document.getElementById('themeBtn').textContent = isDark?'Dark mode':'Light mode';
+  localStorage.setItem('theme', isDark?'light':'dark');
+}
+const saved = localStorage.getItem('theme');
+if(saved) document.documentElement.setAttribute('data-theme', saved);
+
+function updateNavAuth(){
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const authEl = document.getElementById('navAuth');
+  if(!authEl) return;
+  if(user.username){
+    authEl.innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="width:32px;height:32px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700">${user.username[0].toUpperCase()}</div>
+        <span style="font-size:13px;font-weight:500">${user.username}</span>
+        <button onclick="signOut()" style="padding:6px 14px;border-radius:8px;border:1.5px solid var(--border);background:transparent;color:var(--text);cursor:pointer;font-size:13px">Sign out</button>
+      </div>`;
+  } else {
+    authEl.innerHTML = `<a href="login.html"><button class="btn-primary" style="padding:8px 20px;font-size:14px">Login</button></a>`;
+  }
+}
+
+function signOut(){
+  localStorage.removeItem('user');
+  window.location.href = 'login.html';
+}
+
+function quickSearch(q){
+  document.getElementById('searchInput').value = q;
+  doSearch();
+}
+
+function highlight(text, query){
+  const words = query.toLowerCase().split(' ');
+  let result = text;
+  words.forEach(w => {
+    if(w.length > 2){
+      const regex = new RegExp(`(${w})`, 'gi');
+      result = result.replace(regex, '<mark>$1</mark>');
+    }
+  });
+  return result;
+}
+
+function renderResults(results, query, containerId){
+  const el = document.getElementById(containerId);
+  el.innerHTML = results.slice(0,10).map((r,i) => `
+    <div class="result-card">
+      <div style="display:flex;align-items:flex-start;gap:12px">
+        <div class="badge-rank">${i+1}</div>
+        <div style="flex:1">
+          <p style="font-size:13px;color:var(--text);line-height:1.6">${highlight(r.passage.slice(0,200)+'...', query)}</p>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
+            <span style="font-size:11px;color:#64748b">Score: <strong>${r.score}</strong></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function doSearch(){
+  const query = document.getElementById('searchInput').value.trim();
+  if(!query) return;
+
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('skeleton').style.display = 'grid';
+
+  const start = Date.now();
+  try{
+    const res = await fetch(`${API}/search`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({query})
+    });
+    const data = await res.json();
+    const elapsed = Date.now() - start;
+
+    document.getElementById('searchTime').textContent = `${elapsed}ms`;
+    document.getElementById('skeleton').style.display = 'none';
+    document.getElementById('results').style.display = 'block';
+
+    renderResults(data.results.bm25, query, 'bm25Results');
+    renderResults(data.results.lambdamart, query, 'lmResults');
+    renderResults(data.results.lambdamart, query, 'lmResultsSingle');
+    renderResults(data.results.bm25, query, 'bm25ResultsSingle');
+  } catch(e){
+    document.getElementById('skeleton').style.display = 'none';
+    document.getElementById('emptyState').style.display = 'block';
+    document.getElementById('emptyState').innerHTML = '<div style="font-size:48px;margin-bottom:16px">⚠️</div><h3 style="font-size:20px;font-weight:600">API not connected</h3><p style="color:#64748b">Make sure backend is running on port 8000</p>';
+  }
+}
+
+function showTab(tab){
+  ['both','lambdamart','bm25'].forEach(t=>{
+    document.getElementById(`view-${t}`).style.display = t===tab?(t==='both'?'grid':'block'):'none';
+    document.getElementById(`tab-${t}`).classList.toggle('active', t===tab);
+  });
+}
+
+const params = new URLSearchParams(window.location.search);
+if(params.get('q')){
+  document.getElementById('searchInput').value = params.get('q');
+  doSearch();
+}
+
+updateNavAuth();
+</script>
+</body>
+</html>

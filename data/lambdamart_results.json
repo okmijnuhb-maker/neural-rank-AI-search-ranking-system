@@ -1,0 +1,1 @@
+{"model": "LambdaMART", "best_round": 16, "ndcg@10": 0.5956, "mrr": 0.4703, "precision@10": 0.1394, "improvement_ndcg": "17.50%", "improvement_mrr": "31.64%", "best_params": {"max_depth": 4, "eta": 0.1, "min_child_weight": 5, "objective": "rank:ndcg", "eval_metric": "ndcg@10", "tree_method": "hist"}}

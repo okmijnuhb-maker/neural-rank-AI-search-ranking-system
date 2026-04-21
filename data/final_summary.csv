@@ -1,0 +1,6 @@
+Metric,BM25,LambdaMART,Improvement
+NDCG@10,0.5069,0.5956,17.50%
+MRR,0.3573,0.4703,31.64%
+Precision@10,0.1406,0.1394,-
+CTR Lift,-,20.10%,-
+A/B Significant,-,True,-

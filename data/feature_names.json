@@ -1,0 +1,1 @@
+["bm25", "overlap", "exact_match", "bigram", "jaccard", "dice", "q_len", "p_len", "tf_variance", "unique_matches", "first_pos", "last_pos", "avg_pos", "coverage", "stop_ratio", "unique_q_in_p", "sent_count", "char_sim", "idf_sum", "lsa_sim", "tfidf_cosine", "normalized_bm25", "doc_freq"]

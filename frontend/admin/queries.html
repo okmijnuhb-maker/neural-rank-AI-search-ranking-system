@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NeuralRank — Query Logs</title>
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+<style>
+:root{--bg:#f8fafc;--text:#0f172a;--card:#ffffff;--border:#e2e8f0;--primary:#0C447C;--accent:#1D9E75}
+[data-theme="dark"]{--bg:#0f172a;--text:#f1f5f9;--card:#1e293b;--border:#334155;--primary:#378ADD;--accent:#5DCAA5}
+*{margin:0;padding:0;box-sizing:border-box;transition:background .3s,color .3s}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',sans-serif;display:flex;min-height:100vh}
+.sidebar{width:240px;background:var(--primary);color:#fff;display:flex;flex-direction:column;position:fixed;height:100vh;z-index:100}
+.sidebar-link{display:flex;align-items:center;gap:12px;padding:12px 20px;color:rgba(255,255,255,0.8);text-decoration:none;font-size:14px;border-radius:8px;margin:2px 8px}
+.sidebar-link:hover{background:rgba(255,255,255,0.15);color:#fff}
+.sidebar-link.active{background:rgba(255,255,255,0.2);color:#fff;font-weight:600}
+.main{margin-left:240px;flex:1;padding:32px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px}
+.badge-green{background:#E1F5EE;color:#0F6E56;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500}
+.toggle-btn{background:rgba(255,255,255,0.2);border:none;border-radius:20px;padding:6px 12px;cursor:pointer;font-size:12px;color:#fff}
+.search-input{padding:10px 16px;border:1.5px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-size:14px;outline:none;width:280px}
+.search-input:focus{border-color:var(--primary)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;padding:12px;color:#64748b;font-weight:500;border-bottom:2px solid var(--border)}
+td{padding:12px;border-bottom:1px solid var(--border)}
+tr:hover{background:var(--bg)}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center}
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div style="padding:24px 20px;border-bottom:1px solid rgba(255,255,255,0.1)">
+    <div style="font-size:18px;font-weight:700">Neural<span style="color:#5DCAA5">Rank</span></div>
+    <div style="font-size:12px;opacity:0.7;margin-top:4px">Admin Panel</div>
+  </div>
+  <div style="padding:16px 0;flex:1">
+    <div style="font-size:11px;opacity:0.5;padding:8px 20px;text-transform:uppercase;letter-spacing:1px">Main</div>
+    <a href="dashboard.html" class="sidebar-link">📊 Dashboard</a>
+    <a href="queries.html" class="sidebar-link active">🔍 Query Logs</a>
+    <a href="users.html" class="sidebar-link">👥 Users</a>
+    <div style="font-size:11px;opacity:0.5;padding:16px 20px 8px;text-transform:uppercase;letter-spacing:1px">Analytics</div>
+    <a href="../compare.html" class="sidebar-link">📈 Model Metrics</a>
+    <a href="../explain.html" class="sidebar-link">💡 SHAP Explorer</a>
+    <div style="font-size:11px;opacity:0.5;padding:16px 20px 8px;text-transform:uppercase;letter-spacing:1px">App</div>
+    <a href="../search.html" class="sidebar-link">🌐 Live Search</a>
+    <a href="../index.html" class="sidebar-link">🏠 Homepage</a>
+  </div>
+  <div style="padding:16px;border-top:1px solid rgba(255,255,255,0.1)">
+    <div style="font-size:13px;opacity:0.8;margin-bottom:8px" id="adminName">Admin</div>
+    <button class="toggle-btn" onclick="toggleTheme()" id="themeBtn" style="margin-bottom:8px;width:100%">Dark mode</button>
+    <button onclick="logout()" style="width:100%;padding:8px;background:rgba(255,255,255,0.1);border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:13px">Sign Out</button>
+  </div>
+</div>
+
+<div class="main">
+  <div style="margin-bottom:32px">
+    <h1 style="font-size:26px;font-weight:700">Query Logs</h1>
+    <p style="color:#64748b;font-size:14px;margin-top:4px">All search queries made through the NeuralRank API</p>
+  </div>
+
+  <!-- Stats -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:24px">
+    <div class="stat-card">
+      <div style="font-size:12px;color:#64748b;margin-bottom:6px">Total Queries</div>
+      <div style="font-size:28px;font-weight:700;color:var(--primary)" id="totalQ">—</div>
+    </div>
+    <div class="stat-card">
+      <div style="font-size:12px;color:#64748b;margin-bottom:6px">Avg Response</div>
+      <div style="font-size:28px;font-weight:700;color:var(--primary)" id="avgR">—</div>
+    </div>
+    <div class="stat-card">
+      <div style="font-size:12px;color:#64748b;margin-bottom:6px">Fastest</div>
+      <div style="font-size:28px;font-weight:700;color:var(--accent)" id="fastR">—</div>
+    </div>
+    <div class="stat-card">
+      <div style="font-size:12px;color:#64748b;margin-bottom:6px">Slowest</div>
+      <div style="font-size:28px;font-weight:700;color:#e74c3c" id="slowR">—</div>
+    </div>
+  </div>
+
+  <!-- Search + Filter -->
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+      <input class="search-input" type="text" id="searchFilter" placeholder="🔍 Filter queries..." oninput="filterTable()">
+      <div style="display:flex;gap:8px;align-items:center">
+        <span style="font-size:13px;color:#64748b" id="countLabel"></span>
+        <button onclick="loadQueries()" style="padding:8px 16px;background:var(--primary);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px">Refresh</button>
+      </div>
+    </div>
+
+    <div style="overflow-x:auto">
+      <table id="queriesTable">
+        <thead>
+          <tr>
+            <th onclick="sortTable('id')" style="cursor:pointer">ID ↕</th>
+            <th onclick="sortTable('query')" style="cursor:pointer">Query ↕</th>
+            <th onclick="sortTable('time_ms')" style="cursor:pointer">Response Time ↕</th>
+            <th>Timestamp</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <tr><td colspan="5" style="text-align:center;padding:40px;color:#64748b">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'http://127.0.0.1:8000';
+let allQueries = [];
+let sortKey = 'id';
+let sortAsc = false;
+
+function toggleTheme(){
+  const html = document.documentElement;
+  const isDark = html.getAttribute('data-theme')==='dark';
+  html.setAttribute('data-theme', isDark?'light':'dark');
+  document.getElementById('themeBtn').textContent = isDark?'Dark mode':'Light mode';
+  localStorage.setItem('theme', isDark?'light':'dark');
+}
+const saved = localStorage.getItem('theme');
+if(saved) document.documentElement.setAttribute('data-theme', saved);
+
+function logout(){ localStorage.removeItem('user'); window.location.href='../login.html'; }
+const user = JSON.parse(localStorage.getItem('user')||'{}');
+if(user.username) document.getElementById('adminName').textContent = user.username;
+
+async function loadQueries(){
+  try{
+    const res = await fetch(`${API}/admin/queries`);
+    allQueries = await res.json();
+
+    document.getElementById('totalQ').textContent = allQueries.length;
+    const times = allQueries.filter(q=>q.time_ms).map(q=>q.time_ms);
+    if(times.length){
+      document.getElementById('avgR').textContent = Math.round(times.reduce((a,b)=>a+b,0)/times.length)+'ms';
+      document.getElementById('fastR').textContent = Math.min(...times)+'ms';
+      document.getElementById('slowR').textContent = Math.max(...times)+'ms';
+    }
+    renderTable(allQueries);
+  } catch(e){
+    document.getElementById('tableBody').innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;color:#e74c3c">Backend not connected</td></tr>';
+  }
+}
+
+function renderTable(data){
+  document.getElementById('countLabel').textContent = `${data.length} queries`;
+  if(!data.length){
+    document.getElementById('tableBody').innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;color:#64748b">No queries found</td></tr>';
+    return;
+  }
+  document.getElementById('tableBody').innerHTML = data.map(q=>`
+    <tr>
+      <td style="color:#64748b;font-weight:500">#${q.id}</td>
+      <td style="font-weight:500;max-width:400px">${q.query}</td>
+      <td><span style="color:${q.time_ms>1000?'#e74c3c':q.time_ms>600?'#f39c12':'#1D9E75'};font-weight:600">${q.time_ms?q.time_ms+'ms':'—'}</span></td>
+      <td style="color:#64748b;font-size:12px">${q.created_at?new Date(q.created_at).toLocaleString():'—'}</td>
+      <td><span class="badge-green">Success</span></td>
+    </tr>`).join('');
+}
+
+function filterTable(){
+  const q = document.getElementById('searchFilter').value.toLowerCase();
+  renderTable(allQueries.filter(item=> item.query.toLowerCase().includes(q)));
+}
+
+function sortTable(key){
+  sortAsc = sortKey===key ? !sortAsc : true;
+  sortKey = key;
+  const sorted = [...allQueries].sort((a,b)=>{
+    const av = a[key]||0, bv = b[key]||0;
+    return sortAsc ? (av>bv?1:-1) : (av<bv?1:-1);
+  });
+  renderTable(sorted);
+}
+
+loadQueries();
+</script>
+</body>
+</html>

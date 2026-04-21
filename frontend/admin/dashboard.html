@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NeuralRank — Admin Dashboard</title>
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<style>
+:root{--bg:#f8fafc;--text:#0f172a;--card:#ffffff;--border:#e2e8f0;--primary:#0C447C;--accent:#1D9E75}
+[data-theme="dark"]{--bg:#0f172a;--text:#f1f5f9;--card:#1e293b;--border:#334155;--primary:#378ADD;--accent:#5DCAA5}
+*{margin:0;padding:0;box-sizing:border-box;transition:background .3s,color .3s}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',sans-serif;display:flex;min-height:100vh}
+.sidebar{width:240px;background:var(--primary);color:#fff;display:flex;flex-direction:column;position:fixed;height:100vh;z-index:100}
+.sidebar-link{display:flex;align-items:center;gap:12px;padding:12px 20px;color:rgba(255,255,255,0.8);text-decoration:none;font-size:14px;border-radius:8px;margin:2px 8px}
+.sidebar-link:hover{background:rgba(255,255,255,0.15);color:#fff}
+.sidebar-link.active{background:rgba(255,255,255,0.2);color:#fff;font-weight:600}
+.main{margin-left:240px;flex:1;padding:32px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500}
+.badge-green{background:#E1F5EE;color:#0F6E56}
+.badge-blue{background:#E6F1FB;color:#0C447C}
+.badge-red{background:#FCEBEB;color:#c0392b}
+.toggle-btn{background:rgba(255,255,255,0.2);border:none;border-radius:20px;padding:6px 12px;cursor:pointer;font-size:12px;color:#fff}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;padding:12px;color:#64748b;font-weight:500;border-bottom:2px solid var(--border)}
+td{padding:12px;border-bottom:1px solid var(--border)}
+tr:hover{background:var(--bg)}
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar">
+  <div style="padding:24px 20px;border-bottom:1px solid rgba(255,255,255,0.1)">
+    <div style="font-size:18px;font-weight:700">Neural<span style="color:#5DCAA5">Rank</span></div>
+    <div style="font-size:12px;opacity:0.7;margin-top:4px">Admin Panel</div>
+  </div>
+
+  <div style="padding:16px 0;flex:1">
+    <div style="font-size:11px;opacity:0.5;padding:8px 20px;text-transform:uppercase;letter-spacing:1px">Main</div>
+    <a href="dashboard.html" class="sidebar-link active">📊 Dashboard</a>
+    <a href="queries.html" class="sidebar-link">🔍 Query Logs</a>
+    <a href="users.html" class="sidebar-link">👥 Users</a>
+
+    <div style="font-size:11px;opacity:0.5;padding:16px 20px 8px;text-transform:uppercase;letter-spacing:1px">Analytics</div>
+    <a href="../compare.html" class="sidebar-link">📈 Model Metrics</a>
+    <a href="../explain.html" class="sidebar-link">💡 SHAP Explorer</a>
+
+    <div style="font-size:11px;opacity:0.5;padding:16px 20px 8px;text-transform:uppercase;letter-spacing:1px">App</div>
+    <a href="../search.html" class="sidebar-link">🌐 Live Search</a>
+    <a href="../index.html" class="sidebar-link">🏠 Homepage</a>
+  </div>
+
+  <div style="padding:16px;border-top:1px solid rgba(255,255,255,0.1)">
+    <div style="font-size:13px;opacity:0.8;margin-bottom:8px" id="adminName">Admin</div>
+    <button class="toggle-btn" onclick="toggleTheme()" id="themeBtn" style="margin-bottom:8px;width:100%">Dark mode</button>
+    <button onclick="logout()" style="width:100%;padding:8px;background:rgba(255,255,255,0.1);border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:13px">Sign Out</button>
+  </div>
+</div>
+
+<!-- Main Content -->
+<div class="main">
+
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:32px">
+    <div>
+      <h1 style="font-size:26px;font-weight:700">Dashboard</h1>
+      <p style="color:#64748b;font-size:14px;margin-top:4px">Welcome back! Here's what's happening with NeuralRank.</p>
+    </div>
+    <div style="font-size:13px;color:#64748b" id="lastUpdated"></div>
+  </div>
+
+  <!-- Stat Cards -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:32px">
+    <div class="stat-card">
+      <div style="font-size:13px;color:#64748b;margin-bottom:8px">Total Queries</div>
+      <div style="font-size:32px;font-weight:700;color:var(--primary)" id="totalQueries">—</div>
+      <div style="font-size:12px;color:var(--accent);margin-top:4px">↑ Live from database</div>
+    </div>
+    <div class="stat-card">
+      <div style="font-size:13px;color:#64748b;margin-bottom:8px">Avg Response Time</div>
+      <div style="font-size:32px;font-weight:700;color:var(--primary)" id="avgTime">—</div>
+      <div style="font-size:12px;color:#64748b;margin-top:4px">milliseconds</div>
+    </div>
+    <div class="stat-card">
+      <div style="font-size:13px;color:#64748b;margin-bottom:8px">LambdaMART NDCG@10</div>
+      <div style="font-size:32px;font-weight:700;color:var(--accent)">0.5956</div>
+      <div style="font-size:12px;color:var(--accent);margin-top:4px">↑ +17.5% vs BM25</div>
+    </div>
+    <div class="stat-card">
+      <div style="font-size:13px;color:#64748b;margin-bottom:8px">A/B CTR Lift</div>
+      <div style="font-size:32px;font-weight:700;color:var(--accent)">20.1%</div>
+      <div style="font-size:12px;color:#64748b;margin-top:4px">p-value: 0.041</div>
+    </div>
+    <div class="stat-card">
+      <div style="font-size:13px;color:#64748b;margin-bottom:8px">Features Engineered</div>
+      <div style="font-size:32px;font-weight:700;color:var(--primary)">23</div>
+      <div style="font-size:12px;color:#64748b;margin-top:4px">Across 4 categories</div>
+    </div>
+    <div class="stat-card">
+      <div style="font-size:13px;color:#64748b;margin-bottom:8px">Training Queries</div>
+      <div style="font-size:32px;font-weight:700;color:var(--primary)">4,851</div>
+      <div style="font-size:12px;color:#64748b;margin-top:4px">MS MARCO dataset</div>
+    </div>
+  </div>
+
+  <!-- Charts Row -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px">
+    <div class="card">
+      <h3 style="font-size:15px;font-weight:600;margin-bottom:16px">Model Performance</h3>
+      <div id="perfChart"></div>
+    </div>
+    <div class="card">
+      <h3 style="font-size:15px;font-weight:600;margin-bottom:16px">Response Time Distribution</h3>
+      <div id="timeChart"></div>
+    </div>
+  </div>
+
+  <!-- Recent Queries -->
+  <div class="card" style="margin-bottom:24px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h3 style="font-size:15px;font-weight:600">Recent Queries</h3>
+      <a href="queries.html" style="font-size:13px;color:var(--primary)">View all →</a>
+    </div>
+    <div id="recentQueriesTable">
+      <div style="text-align:center;padding:40px;color:#64748b">Loading queries...</div>
+    </div>
+  </div>
+
+  <!-- Model Metrics Table -->
+  <div class="card">
+    <h3 style="font-size:15px;font-weight:600;margin-bottom:16px">Model Metrics</h3>
+    <div id="metricsTable">
+      <div style="text-align:center;padding:40px;color:#64748b">Loading metrics...</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const API = 'http://127.0.0.1:8000';
+
+function toggleTheme(){
+  const html = document.documentElement;
+  const isDark = html.getAttribute('data-theme')==='dark';
+  html.setAttribute('data-theme', isDark?'light':'dark');
+  document.getElementById('themeBtn').textContent = isDark?'Dark mode':'Light mode';
+  localStorage.setItem('theme', isDark?'light':'dark');
+}
+const saved = localStorage.getItem('theme');
+if(saved) document.documentElement.setAttribute('data-theme', saved);
+
+function logout(){
+  localStorage.removeItem('user');
+  window.location.href = '../login.html';
+}
+
+const user = JSON.parse(localStorage.getItem('user') || '{}');
+if(user.username) document.getElementById('adminName').textContent = user.username;
+
+document.getElementById('lastUpdated').textContent = 'Last updated: ' + new Date().toLocaleTimeString();
+
+// Load queries from API
+async function loadData(){
+  try{
+    const res = await fetch(`${API}/admin/queries`);
+    const queries = await res.json();
+
+    document.getElementById('totalQueries').textContent = queries.length;
+    const avgT = queries.length ? Math.round(queries.reduce((a,q)=>a+(q.time_ms||0),0)/queries.length) : 0;
+    document.getElementById('avgTime').textContent = avgT + 'ms';
+
+    // Recent queries table
+    if(queries.length === 0){
+      document.getElementById('recentQueriesTable').innerHTML = '<div style="text-align:center;padding:40px;color:#64748b">No queries yet. Try searching something!</div>';
+    } else {
+      document.getElementById('recentQueriesTable').innerHTML = `
+        <table>
+          <thead><tr>
+            <th>ID</th><th>Query</th><th>Response Time</th><th>Time</th><th>Status</th>
+          </tr></thead>
+          <tbody>${queries.slice(0,10).map(q=>`
+            <tr>
+              <td style="color:#64748b">#${q.id}</td>
+              <td style="font-weight:500">${q.query}</td>
+              <td>${q.time_ms ? q.time_ms+'ms' : '—'}</td>
+              <td style="color:#64748b;font-size:12px">${q.created_at ? new Date(q.created_at).toLocaleString() : '—'}</td>
+              <td><span class="badge badge-green">Success</span></td>
+            </tr>`).join('')}
+          </tbody>
+        </table>`;
+    }
+
+    // Response time chart
+    const times = queries.filter(q=>q.time_ms).map(q=>q.time_ms);
+    if(times.length){
+      Plotly.newPlot('timeChart',[{x:times,type:'histogram',marker:{color:'#0C447C'}}],
+        {margin:{t:10,b:40},paper_bgcolor:'transparent',plot_bgcolor:'transparent',
+         font:{color:'#64748b'},xaxis:{title:'ms'},yaxis:{title:'Count'}},{responsive:true});
+    } else {
+      document.getElementById('timeChart').innerHTML = '<div style="text-align:center;padding:40px;color:#64748b">No data yet</div>';
+    }
+
+  } catch(e){
+    document.getElementById('recentQueriesTable').innerHTML = '<div style="text-align:center;padding:20px;color:#e74c3c">Backend not connected</div>';
+  }
+
+  // Load metrics
+  try{
+    const res2 = await fetch(`${API}/metrics`);
+    const metrics = await res2.json();
+    document.getElementById('metricsTable').innerHTML = `
+      <table>
+        <thead><tr><th>Model</th><th>NDCG@10</th><th>MRR</th><th>Precision@10</th><th>Status</th></tr></thead>
+        <tbody>${metrics.map(m=>`
+          <tr>
+            <td style="font-weight:600">${m.model}</td>
+            <td>${m.ndcg}</td><td>${m.mrr}</td><td>${m.precision}</td>
+            <td><span class="badge ${m.model==='LambdaMART'?'badge-green':'badge-blue'}">${m.model==='LambdaMART'?'Best model':'Baseline'}</span></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`;
+  } catch(e){}
+}
+
+// Performance chart
+Plotly.newPlot('perfChart',[
+  {x:['NDCG@10','MRR','Precision@10'],y:[0.5069,0.3573,0.1406],name:'BM25',type:'bar',marker:{color:'#e74c3c'}},
+  {x:['NDCG@10','MRR','Precision@10'],y:[0.5956,0.4703,0.1394],name:'LambdaMART',type:'bar',marker:{color:'#1D9E75'}}
+],{barmode:'group',margin:{t:10,b:40},paper_bgcolor:'transparent',plot_bgcolor:'transparent',
+   font:{color:'#64748b'}},{responsive:true});
+
+loadData();
+</script>
+</body>
+</html>

@@ -88,3 +88,21 @@ def get_users(db: Session = Depends(get_db)):
     users = db.query(User).order_by(User.created_at.asc()).all()
     return [{"id": u.id, "username": u.username, "email": u.email,
              "role": u.role, "created_at": str(u.created_at)} for u in users]
+    # Auto create admin user on startup
+@app.on_event("startup")
+def create_admin():
+    db = next(get_db())
+    try:
+        existing = db.query(User).filter(User.username == "admin").first()
+        if not existing:
+            admin = User(
+                username="admin",
+                email="admin@neuralrank.com",
+                password_hash="admin123",
+                role="admin"
+            )
+            db.add(admin)
+            db.commit()
+            print("Admin user created!")
+    finally:
+        db.close()

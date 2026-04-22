@@ -2,6 +2,7 @@
 import numpy as np
 import json
 import pickle
+import os
 import xgboost as xgb
 from sklearn.metrics.pairwise import cosine_similarity
 from nltk.corpus import stopwords
@@ -10,23 +11,24 @@ import nltk
 nltk.download('stopwords', quiet=True)
 STOPWORDS = set(stopwords.words('english'))
 
-BASE = "C:/my project/ranking and searching"
+# Fixed path - works on both Windows and Render
+BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Load all saved objects
-with open(f"{BASE}/data/clean_msmarco.json") as f:
+with open(os.path.join(BASE, "data", "clean_msmarco.json")) as f:
     data = json.load(f)
 
-feature_names = json.load(open(f"{BASE}/data/feature_names.json"))
-doc_freq = json.load(open(f"{BASE}/data/doc_freq.json"))
-bm25_norm = json.load(open(f"{BASE}/data/bm25_norm.json"))
+feature_names = json.load(open(os.path.join(BASE, "data", "feature_names.json")))
+doc_freq = json.load(open(os.path.join(BASE, "data", "doc_freq.json")))
+bm25_norm = json.load(open(os.path.join(BASE, "data", "bm25_norm.json")))
 
-with open(f"{BASE}/data/bm25_index.pkl", "rb") as f:
+with open(os.path.join(BASE, "data", "bm25_index.pkl"), "rb") as f:
     bm25 = pickle.load(f)
 
-with open(f"{BASE}/data/lsa_pipeline.pkl", "rb") as f:
+with open(os.path.join(BASE, "data", "lsa_pipeline.pkl"), "rb") as f:
     lsa = pickle.load(f)
 
-with open(f"{BASE}/data/tfidf_vectorizer.pkl", "rb") as f:
+with open(os.path.join(BASE, "data", "tfidf_vectorizer.pkl"), "rb") as f:
     tfidf = pickle.load(f)
 
 N = len(data)
@@ -39,7 +41,6 @@ def extract_all_features(query, passage, bm25_score):
     p = passage.lower().split()
     q_set, p_set = set(q), set(p)
 
-    # Lexical
     overlap = len(q_set & p_set) / len(q_set) if q_set else 0
     exact = sum(1 for t in q if t in p_set)
     q_bg = set(zip(q[:-1], q[1:]))
@@ -48,20 +49,17 @@ def extract_all_features(query, passage, bm25_score):
     jaccard = len(q_set & p_set) / len(q_set | p_set) if q_set | p_set else 0
     dice = 2*len(q_set & p_set) / (len(q_set)+len(p_set)) if q_set and p_set else 0
 
-    # Statistical
     q_len = len(q)
     p_len = len(p)
     tf_var = np.var([p.count(t) for t in q]) if q else 0
     unique_matches = len(q_set & p_set)
 
-    # Positional
     positions = [i for i, t in enumerate(p) if t in q_set]
     first_pos = positions[0]/p_len if positions and p_len else 1.0
     last_pos = positions[-1]/p_len if positions and p_len else 1.0
     avg_pos = np.mean(positions)/p_len if positions and p_len else 1.0
     coverage = len(positions)/p_len if p_len else 0
 
-    # Semantic
     stop_ratio = len([t for t in p if t in STOPWORDS])/p_len if p_len else 0
     unique_q_in_p = len(q_set & p_set)/len(q_set) if q_set else 0
     sent_count = passage.count('.')+passage.count('?')+passage.count('!')
@@ -70,7 +68,6 @@ def extract_all_features(query, passage, bm25_score):
     char_sim = len(q_chars & p_chars)/len(q_chars | p_chars) if q_chars | p_chars else 0
     idf_sum = sum(np.log(N/(1+doc_freq.get(t, 0))) for t in q)
 
-    # LSA + TF-IDF
     try:
         lsa_sim = float(cosine_similarity(lsa.transform([query]), lsa.transform([passage]))[0][0])
     except:
@@ -80,10 +77,7 @@ def extract_all_features(query, passage, bm25_score):
     except:
         tfidf_sim = 0.0
 
-    # Normalized BM25
     norm_bm25 = (bm25_score - bm25_norm['min']) / (bm25_norm['max'] - bm25_norm['min'] + 1e-9)
-
-    # Doc freq
     doc_freq_score = np.mean([doc_freq.get(t, 0)/N for t in q]) if q else 0
 
     return [bm25_score, overlap, exact, bigram, jaccard, dice,
@@ -100,15 +94,14 @@ def search(query, top_k=10):
     passages = [corpus[i] for i in top_idx]
     bm25_scores = scores[top_idx]
 
-    # SHAP-weighted scoring for better live results
     lm_scores = []
     for p, b in zip(passages, bm25_scores):
         f = extract_all_features(query, p, b)
-        score = (f[1]  * 0.35 +   # overlap
-                 f[20] * 0.25 +   # tfidf_cosine
-                 f[19] * 0.15 +   # lsa_sim
-                 f[17] * 0.10 +   # char_sim
-                 (1 - f[10]) * 0.15)  # first_pos inverted
+        score = (f[1]  * 0.35 +
+                 f[20] * 0.25 +
+                 f[19] * 0.15 +
+                 f[17] * 0.10 +
+                 (1 - f[10]) * 0.15)
         lm_scores.append(score)
 
     lm_scores = np.array(lm_scores)

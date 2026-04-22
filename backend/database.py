@@ -3,10 +3,17 @@ from sqlalchemy import create_engine, Column, Integer, String, Float, Text, TIME
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import datetime
+import os
 
-DB_URL = "mysql+pymysql://root:Charan%40123@localhost/neuralrank"
+# Use SQLite for Render, MySQL for local
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./neuralrank.db")
 
-engine = create_engine(DB_URL)
+# Fix for SQLite
+if DATABASE_URL.startswith("sqlite"):
+    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+else:
+    engine = create_engine(DATABASE_URL)
+
 SessionLocal = sessionmaker(bind=engine)
 Base = declarative_base()
 
@@ -16,7 +23,7 @@ class User(Base):
     username = Column(String(50), unique=True)
     email = Column(String(100), unique=True)
     password_hash = Column(String(255))
-    role = Column(Enum('user', 'admin'), default='user')
+    role = Column(String(10), default='user')
     created_at = Column(TIMESTAMP, default=datetime.datetime.utcnow)
 
 class QueryLog(Base):
@@ -24,7 +31,7 @@ class QueryLog(Base):
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer)
     query_text = Column(String(500))
-    model_used = Column(Enum('bm25', 'lambdamart', 'both'))
+    model_used = Column(String(20))
     response_time_ms = Column(Integer)
     results_count = Column(Integer)
     created_at = Column(TIMESTAMP, default=datetime.datetime.utcnow)
@@ -37,6 +44,9 @@ class ModelMetric(Base):
     mrr = Column(Float)
     precision_at_10 = Column(Float)
     recorded_at = Column(TIMESTAMP, default=datetime.datetime.utcnow)
+
+# Create all tables automatically
+Base.metadata.create_all(bind=engine)
 
 def get_db():
     db = SessionLocal()

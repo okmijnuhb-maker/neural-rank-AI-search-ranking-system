@@ -2,6 +2,14 @@
 
 A senior-level Learning-to-Rank (LTR) system that uses machine learning to rank search results 17.5% better than traditional keyword search.
 
+## Live Demo
+
+Frontend: https://okmijnuhb-maker.github.io/neural-rank-AI-search-ranking-system/frontend/index.html
+
+Backend API: https://neural-rank-ai-search-ranking-system.onrender.com
+
+Demo Login: username: admin | password: admin123
+
 ## What is this project?
 
 NeuralRank replicates how Google, Microsoft and Amazon rank search results — using BM25 as baseline and LambdaMART (XGBoost) as the ML ranking model, trained on the real MS MARCO dataset.
@@ -24,7 +32,7 @@ NeuralRank replicates how Google, Microsoft and Amazon rank search results — u
 
 **Backend**
 - FastAPI
-- SQLAlchemy + MySQL
+- SQLAlchemy + SQLite
 - Uvicorn
 
 **Frontend**
@@ -59,19 +67,6 @@ python -m uvicorn main:app --reload
 ### Frontend
 Open `frontend/index.html` in browser
 
-### Database
-- Install MySQL
-- Create database `neuralrank`
-- Update password in `database.py`
-
-## Setup Requirements
-
-```bash
-pip install fastapi uvicorn pymysql sqlalchemy xgboost 
-pip install rank_bm25 shap scikit-learn numpy pandas
-pip install matplotlib plotly datasets nltk
-```
-
 ## Results
 
 - Trained on MS MARCO — real Microsoft Bing search dataset
@@ -82,4 +77,4 @@ pip install matplotlib plotly datasets nltk
 
 ## Interview Summary
 
-> "I built a search ranking system similar to how Google ranks results — using BM25 as baseline and LambdaMART as the ML model. Trained on MS MARCO dataset with 23 engineered features. Achieved 17.5% NDCG improvement, proved with A/B testing (p=0.041), explained with SHAP, and deployed as a full-stack web app with FastAPI backend and MySQL database."
+> "I built a search ranking system similar to how Google ranks results — using BM25 as baseline and LambdaMART as the ML model. Trained on MS MARCO dataset with 23 engineered features. Achieved 17.5% NDCG improvement, proved with A/B testing (p=0.041), explained with SHAP, and deployed as a full-stack web app with FastAPI backend and SQLite database."
